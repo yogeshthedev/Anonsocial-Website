@@ -1,6 +1,7 @@
 import { User } from "../models/user.models.js";
 import { uploadFile } from "../services/storage.service.js";
-import ImageKit from "imagekit"
+import ImageKit from "imagekit";
+import { Post } from "./../models/post.models.js";
 
 const imagekit = new ImageKit({
   privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
@@ -9,26 +10,36 @@ const imagekit = new ImageKit({
 });
 
 export const getMyProfileController = async (req, res) => {
-  const userProfile = req.user;
+  try {
+    const userProfile = req.user;
 
-  if (!userProfile) {
-    return res.status(404).json({
-      message: "User Prfile Not exist",
+    if (!userProfile) {
+      return res.status(404).json({ message: "User Profile Not exist" });
+    }
+
+    const postsCount = await Post.countDocuments({
+      authorId: userProfile._id,
+      deleted: false,
+      visibility: "public",
     });
-  }
 
-  res.status(201).json({
-    message: "User Profile fetched successfully",
-    user: {
-      id: userProfile._id,
-      displayName: userProfile.displayName,
-      email: userProfile.email,
-      username: userProfile.username,
-      photoUrl: userProfile.photoUrl,
-      bio: userProfile.bio,
-      lastSeen: userProfile.lastSeen,
-    },
-  });
+    return res.status(200).json({
+      message: "User Profile fetched successfully",
+      user: {
+        id: userProfile._id,
+        displayName: userProfile.displayName,
+        email: userProfile.email,
+        username: userProfile.username,
+        photoUrl: userProfile.photoUrl,
+        bio: userProfile.bio,
+        lastSeen: userProfile.lastSeen,
+        postsCount: postsCount,
+      },
+    });
+  } catch (error) {
+    console.error("Profile fetch error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
 };
 
 export const getUserProfileController = async (req, res) => {
@@ -53,7 +64,6 @@ export const getUserProfileController = async (req, res) => {
     },
   });
 };
-
 
 export const updateAvatarController = async (req, res) => {
   try {
@@ -138,7 +148,6 @@ export const updateAvatarController = async (req, res) => {
   }
 };
 
-
 export const updateMyProfileController = async (req, res) => {
   try {
     const userId = req.user.id; // set by your auth middleware
@@ -147,7 +156,11 @@ export const updateMyProfileController = async (req, res) => {
     const { displayName, username, bio } = req.body;
 
     // If none of the allowed fields are present, return error
-    if (displayName === undefined && username === undefined && bio === undefined) {
+    if (
+      displayName === undefined &&
+      username === undefined &&
+      bio === undefined
+    ) {
       return res.status(400).json({ message: "No fields to update" });
     }
 
@@ -156,7 +169,9 @@ export const updateMyProfileController = async (req, res) => {
     // Validate displayName if provided
     if (displayName !== undefined) {
       if (typeof displayName !== "string") {
-        return res.status(400).json({ message: "displayName must be a string" });
+        return res
+          .status(400)
+          .json({ message: "displayName must be a string" });
       }
       const trimmed = displayName.trim();
       if (trimmed.length === 0 || trimmed.length > 50) {
@@ -184,7 +199,10 @@ export const updateMyProfileController = async (req, res) => {
       }
 
       // Check uniqueness: find any other user (not this user) with the same username
-      const conflict = await User.findOne({ username: normalized, _id: { $ne: userId } });
+      const conflict = await User.findOne({
+        username: normalized,
+        _id: { $ne: userId },
+      });
       if (conflict) {
         return res.status(409).json({ message: "Username is already taken" });
       }
@@ -199,7 +217,9 @@ export const updateMyProfileController = async (req, res) => {
       }
       const trimmed = bio.trim();
       if (trimmed.length > 160) {
-        return res.status(400).json({ message: "bio must be at most 160 characters" });
+        return res
+          .status(400)
+          .json({ message: "bio must be at most 160 characters" });
       }
       updates.bio = trimmed;
     }
@@ -210,9 +230,9 @@ export const updateMyProfileController = async (req, res) => {
     }
 
     // Perform the update and return the new document (excluding password)
-    const updatedUser = await User.findByIdAndUpdate(userId, updates, { new: true }).select(
-      "-password -photoFileId"
-    );
+    const updatedUser = await User.findByIdAndUpdate(userId, updates, {
+      new: true,
+    }).select("-password -photoFileId");
 
     return res.status(200).json({
       message: "Profile updated",
