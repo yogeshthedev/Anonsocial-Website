@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authUserMiddleware } from "../middleware/auth.middleware.js";
 import {
+  checkUsernameController,
   getMyProfileController,
   getUserProfileController,
   updateAvatarController,
@@ -35,5 +36,6 @@ router.put(
 );
 
 router.get("/users/:username", getUserProfileController); //done
+router.get("/check-username/:username", checkUsernameController);
 
 export default router;

@@ -64,4 +64,20 @@ export const updateAvatar = createAsyncThunk(
       return rejectWithValue("Avatar update failed");
     }
   }
+
+  
 );
+
+
+export const checkUsername = createAsyncThunk(
+  "user/checkUsername",
+  async (username, { rejectWithValue }) => {
+    try {
+      const res = await axios.get(`/check-username/${username}`);
+      return res.data;
+    } catch (err) {
+      return rejectWithValue("Username check failed");
+    }
+  }
+);
+

@@ -27,9 +27,9 @@ const ProfileHeader = ({ user, isAuthenticated }) => {
       {/* Edit Buttons Only If Owner */}
       {isAuthenticated && (
         <div>
-          <Link to="/profile/edit">Edit Profile</Link>
+          <Link to="/me/edit">Edit Profile</Link>
           <br />
-          <Link to="/profile/change-avatar">Change Avatar</Link>
+          <Link to="/me/change-avatar">Change Avatar</Link>
         </div>
       )}
     </div>

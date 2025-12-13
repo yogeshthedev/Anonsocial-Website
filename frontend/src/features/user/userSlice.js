@@ -5,6 +5,7 @@ import {
   fetchUserProfile,
   updateMyProfile,
   updateAvatar,
+  checkUsername,
 } from "./userThunks";
 
 const initialState = {
@@ -12,6 +13,9 @@ const initialState = {
   otherUser: null, // another user’s profile when visiting /user/:username
   loading: false,
   error: null,
+
+  usernameAvailable: null,
+  checkingUsername: false,
 };
 
 export const userSlice = createSlice({
@@ -81,6 +85,21 @@ export const userSlice = createSlice({
       .addCase(updateAvatar.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      });
+
+    builder
+
+      // USERNAME CHECK
+      .addCase(checkUsername.pending, (state) => {
+        state.checkingUsername = true;
+      })
+      .addCase(checkUsername.fulfilled, (state, action) => {
+        state.checkingUsername = false;
+        state.usernameAvailable = action.payload.available;
+      })
+      .addCase(checkUsername.rejected, (state) => {
+        state.checkingUsername = false;
+        state.usernameAvailable = null;
       });
   },
 });

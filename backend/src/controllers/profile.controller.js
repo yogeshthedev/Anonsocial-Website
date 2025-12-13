@@ -243,3 +243,57 @@ export const updateMyProfileController = async (req, res) => {
     return res.status(500).json({ message: "Something went wrong" });
   }
 };
+
+export const checkUsernameController = async (req, res) => {
+  try {
+    let { username } = req.params;
+
+    if (!username) {
+      return res
+        .status(400)
+        .json({ available: false, message: "Username is required" });
+    }
+
+    username = username.trim().toLowerCase();
+
+    // Validate format
+    const usernameRegex = /^[a-z0-9_]{3,30}$/;
+    if (!usernameRegex.test(username)) {
+      return res.status(400).json({
+        available: false,
+        message: "Invalid username format",
+      });
+    }
+
+    // If user is logged in and checking their own username, allow it
+    const currentUserId = req.user?.id; // optional
+    if (currentUserId) {
+      const currentUser = await User.findById(currentUserId);
+      if (currentUser && currentUser.username === username) {
+        return res.status(200).json({
+          available: true,
+          message: "Username unchanged",
+        });
+      }
+    }
+
+    // Check in DB
+    const existing = await User.findOne({ username });
+
+    if (existing) {
+      return res.status(200).json({
+        available: false,
+        message: "Username already taken",
+      });
+    }
+
+    // Available
+    return res.status(200).json({
+      available: true,
+      message: "Username is available",
+    });
+  } catch (error) {
+    console.error("checkUsername error:", error);
+    return res.status(500).json({ available: false, message: "Server error" });
+  }
+};
